@@ -1,0 +1,38 @@
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1d1f23; --muted: #6a7079; --line: #e3e5e8;
+  --accent: #2f6fde; --accent-fg: #ffffff; --ok: #1f8a4c; --warn: #b26a00; --bad: #c0392b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17191c; --surface: #212429; --fg: #e8eaed; --muted: #9aa0a8; --line: #33373d;
+    --accent: #7aa7ff; --accent-fg: #0d1420; --ok: #5cc98a; --warn: #e0a64a; --bad: #ef7a6c;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+h1 { font-size: 18px; margin: 0 0 4px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+p.hint, .hint { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; }
+select, input[type="text"], textarea {
+  font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 8px;
+}
+textarea { width: 100%; resize: vertical; }
+select:focus, input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button {
+  font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  padding: 6px 12px; cursor: pointer;
+}
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button:disabled { opacity: .55; cursor: default; }
+label.row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.switch { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--line); position: relative; cursor: pointer; flex: none; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { left: 16px; }
+.muted { color: var(--muted); }

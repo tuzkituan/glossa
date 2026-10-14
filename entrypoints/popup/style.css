@@ -1,0 +1,9 @@
+body { width: 340px; padding: 14px; }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+header button { padding: 4px 10px; font-size: 12.5px; }
+section + section { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; }
+.bar { display: flex; gap: 8px; margin-top: 8px; }
+.bar select { flex: 1; min-width: 0; }
+.output { margin-top: 10px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+.output .from { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }

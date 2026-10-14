@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glossa settings</title>
+    <link rel="stylesheet" href="~/assets/page.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Glossa</h1>
+        <p class="hint">Translation runs on this device with Chrome's built-in models. Nothing you read or write is sent anywhere.</p>
+      </header>
+
+      <div id="no-api" class="banner" hidden>
+        This Chrome has no built-in Translator API. Glossa needs Chrome 138 or newer on desktop.
+      </div>
+
+      <section class="card">
+        <h2>Languages</h2>
+        <div class="field">
+          <label for="target">Translate messages and selections into</label>
+          <select id="target"></select>
+        </div>
+        <div class="field">
+          <span class="label">When I translate my reply</span>
+          <label class="row"><input type="radio" name="replyMode" value="match" /> Use the language the other person writes in</label>
+          <label class="row"><input type="radio" name="replyMode" value="fixed" /> Always use one language</label>
+          <div class="inline">
+            <label for="replyLang" id="replyLangLabel">Reply language</label>
+            <select id="replyLang"></select>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Other languages I read or write</span>
+          <div id="langs" class="chips"></div>
+          <select id="addLang" aria-label="Add a language"></select>
+          <p class="hint">Used to pick which language packs to download below.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Language packs</h2>
+        <p class="hint">Chrome downloads each model once and keeps it. Packs must be downloaded here before pages can use them.</p>
+        <table id="packs"><tbody></tbody></table>
+        <div class="inline add-pair">
+          <select id="pairFrom" aria-label="From"></select> →
+          <select id="pairTo" aria-label="To"></select>
+          <button id="addPair">Add pair</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Chats</h2>
+        <div id="sites"></div>
+        <p class="hint">Messages in another language get a Translate button. Your own messages and ones already in your language don't.</p>
+      </section>
+
+      <section class="card">
+        <h2>Shortcuts</h2>
+        <div class="field">
+          <label for="replyKey">Translate my draft in the focused text box</label>
+          <div class="inline">
+            <input type="text" id="replyKey" readonly />
+            <span class="hint">Click, then press the new combination.</span>
+          </div>
+        </div>
+        <label class="row"><input type="checkbox" class="switch" id="selectionButton" /> Show a translate button when I select text</label>
+        <p class="hint">Translate selection: <b id="selKey">Alt+T</b> or right-click → Translate. <a href="#" id="shortcuts">Change shortcut</a></p>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glossa</title>
+    <link rel="stylesheet" href="~/assets/page.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Glossa</h1>
+      <button id="settings" title="Settings">Settings</button>
+    </header>
+    <section>
+      <textarea id="input" rows="3" placeholder="Type or paste text to translate"></textarea>
+      <div class="bar">
+        <select id="target" aria-label="Translate into"></select>
+        <button id="go" class="primary">Translate</button>
+      </div>
+      <div id="output" class="output" hidden></div>
+    </section>
+    <section id="site" hidden>
+      <label class="row"><input type="checkbox" class="switch" id="auto" /> <span>Translate buttons on <b id="site-name"></b> messages</span></label>
+    </section>
+    <section>
+      <label class="row"><input type="checkbox" class="switch" id="selection" /> <span>Show button when selecting text</span></label>
+    </section>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
