@@ -17,8 +17,15 @@ if (hashPair) {
   highlight = `${from}>${to}`;
 }
 
-const hasApi = typeof Translator !== 'undefined' && typeof LanguageDetector !== 'undefined';
-$('no-api').hidden = hasApi;
+// Firefox translates through Google Translate: no on-device API, no packs to manage.
+const FIREFOX = import.meta.env.FIREFOX;
+const hasApi = !FIREFOX && typeof Translator !== 'undefined' && typeof LanguageDetector !== 'undefined';
+$('no-api').hidden = hasApi || FIREFOX;
+if (FIREFOX) {
+  $('packs-card').hidden = true;
+  $('privacy').textContent =
+    'Translation uses Google Translate: the text you translate is sent to Google. Nothing is sent until you ask for a translation.';
+}
 
 async function update(patch: Partial<Settings>) {
   settings = await saveSettings(patch);

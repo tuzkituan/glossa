@@ -1,3 +1,5 @@
+import { google } from '@/lib/backends/google';
+import { detect, translate, translateMany, useBackend } from '@/lib/engine';
 import { OFFSCREEN, type Request } from '@/lib/messaging';
 
 const OFFSCREEN_URL = '/offscreen.html';
@@ -19,7 +21,18 @@ async function ensureOffscreen() {
   await creating;
 }
 
+// Firefox has no on-device translation API and no offscreen documents: translate right here
+// with Google Translate. Chrome runs its on-device models in the offscreen document.
+const FIREFOX = import.meta.env.FIREFOX;
+if (FIREFOX) useBackend(google);
+
 async function forward(msg: Request) {
+  if (FIREFOX) {
+    if (msg.type === 'translate') return translate(msg);
+    if (msg.type === 'translate-many') return translateMany(msg);
+    if (msg.type === 'detect') return detect(msg.text);
+    return;
+  }
   await ensureOffscreen();
   return browser.runtime.sendMessage({ ...msg, dest: OFFSCREEN });
 }
