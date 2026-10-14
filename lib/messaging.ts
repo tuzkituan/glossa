@@ -49,7 +49,15 @@ export type TranslateResponse =
 
 export type TranslateManyResponse = { ok: true; texts: string[] } | Failure;
 
-export type DetectResponse = { ok: true; lang: string; confidence: number } | Failure;
+export interface Candidate {
+  lang: string;
+  confidence: number;
+}
+
+/** `candidates` ranks every language seen, so mixed text ("làm gì có milestones") shows both. */
+export type DetectResponse =
+  | { ok: true; lang: string; confidence: number; candidates: Candidate[] }
+  | Failure;
 
 /** Messages the background forwards to the offscreen document carry `dest: OFFSCREEN`. */
 export const OFFSCREEN = 'glossa-offscreen';

@@ -1,6 +1,6 @@
 // Adds a Translate button under incoming foreign-language chat messages.
 // Clicking it swaps the message text for its translation in place.
-import { languageName, sameLanguage } from './languages';
+import { languageName, likelyLanguage, sameLanguage } from './languages';
 import { send, type Failure } from './messaging';
 import type { Settings } from './settings';
 import type { SiteAdapter } from './sites';
@@ -350,16 +350,26 @@ export class MessageButtons {
    * in my language goes into the reply language instead.
    */
   private async translateRuns(el: HTMLElement, entry: Entry, texts: string[]) {
+    const { target, replyLang, languages } = this.settings();
     if (!entry.source) {
       const det = await send({ type: 'detect', text: readableText(el) });
       if (!det.ok) return det;
       if (det.lang === 'und') {
         return { ok: false as const, code: 'uncertain' as const, message: "Couldn't tell which language this is." };
       }
-      entry.source = det.lang;
+      // Any of my language in it (even mixed with English, "làm gì có milestones"): translate
+      // from my language into the reply language; that model passes the English words through
+      // untouched. Translating mixed text the other way garbles it. No trace of my language:
+      // translate it into my language.
+      const mine = det.candidates.find((c) => c.confidence >= 0.15 && sameLanguage(c.lang, target));
+      entry.source = mine ? mine.lang : likelyLanguage(det.candidates, [target, replyLang, ...languages], target);
+      if (sameLanguage(entry.source, target)) {
+        entry.target = replyLang;
+        return send({ type: 'translate-many', texts, source: entry.source, target: entry.target });
+      }
+      entry.target = mine ? replyLang : target;
     }
-    const { target, replyLang } = this.settings();
-    entry.target = sameLanguage(entry.source, target) ? replyLang : target;
+    entry.target ??= target;
     if (sameLanguage(entry.source, entry.target)) {
       return { ok: false as const, code: 'error' as const, message: `Already in ${languageName(entry.target)}.` };
     }

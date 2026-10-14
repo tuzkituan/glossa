@@ -91,8 +91,15 @@ async function detectTop(text: string): Promise<LanguageDetectionResult> {
 
 export async function detect(text: string): Promise<DetectResponse> {
   try {
-    const top = await detectTop(text);
-    return { ok: true, lang: top.detectedLanguage, confidence: top.confidence };
+    const d = await getDetector();
+    const results = (await d.detect(text.slice(0, 2000))).filter((r) => r.detectedLanguage !== 'und');
+    const top = results[0] ?? { detectedLanguage: 'und', confidence: 0 };
+    return {
+      ok: true,
+      lang: top.detectedLanguage,
+      confidence: top.confidence,
+      candidates: results.slice(0, 5).map((r) => ({ lang: r.detectedLanguage, confidence: r.confidence })),
+    };
   } catch (e) {
     return fail(e);
   }

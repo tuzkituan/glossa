@@ -1,5 +1,6 @@
 import { keyCombo } from '@/lib/keys';
 import { ComposerButtons } from '@/lib/composer';
+import { sameLanguage } from '@/lib/languages';
 import { MessageButtons } from '@/lib/messages';
 import { send, type Failure } from '@/lib/messaging';
 import { focusedEditable, translateDraft } from '@/lib/reply';
@@ -23,6 +24,10 @@ export default defineContentScript({
     // Background failures toast once per problem per page; a click always answers.
     const reported = new Set<string>();
     const onMessageFailure = (f: Failure, clicked = false) => {
+      // A missing pack for a language I don't use means a wrong guess, not something to set up.
+      const mine = [settings.target, settings.replyLang, ...settings.languages];
+      const ours = (lang?: string) => !lang || mine.some((l) => sameLanguage(l, lang));
+      if (f.code === 'needs-download' && !(ours(f.source) && ours(f.target))) return;
       const key = `${f.code}:${f.source}>${f.target}`;
       if (reported.has(key) && !clicked) return;
       reported.add(key);

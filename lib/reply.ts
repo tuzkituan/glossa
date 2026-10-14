@@ -1,5 +1,5 @@
 // Translate the draft in the focused text box before sending.
-import { languageName, sameLanguage } from './languages';
+import { languageName, likelyLanguage, otherLanguage, sameLanguage } from './languages';
 import { send } from './messaging';
 import type { Settings } from './settings';
 import type { SiteAdapter } from './sites';
@@ -109,7 +109,10 @@ export async function translateDraft(
     toast(det.message, anchor, { label: 'Settings', run: () => openSettings() });
     return;
   }
-  const source = det.lang === 'und' ? undefined : det.lang;
+  let source =
+    det.lang === 'und'
+      ? undefined
+      : likelyLanguage(det.candidates, [settings.target, settings.replyLang, ...settings.languages], settings.target);
 
   let target = settings.replyLang;
   if (settings.replyMode === 'match' && site && source) {
@@ -118,9 +121,15 @@ export async function translateDraft(
     // and asking to translate means I want another language, so use the reply language.
     if (theirs && !sameLanguage(theirs, source)) target = theirs;
   }
+  // Mixed drafts ("làm gì có milestones / goals cụ thể"): translate from whichever language
+  // in it isn't the target, and leave the words already in the target alone.
   if (source && sameLanguage(source, target)) {
-    toast(`Already in ${languageName(target)}`, anchor);
-    return;
+    const other = otherLanguage(det.candidates, target, [settings.target, ...settings.languages]);
+    if (!other) {
+      toast(`Already in ${languageName(target)}`, anchor);
+      return;
+    }
+    source = other;
   }
 
   // Rich editors with chips: translate run by run and keep the chips.
