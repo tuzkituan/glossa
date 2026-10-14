@@ -108,6 +108,7 @@ function packRow(label: string, key: string, check: () => Promise<AIAvailability
   status.textContent = 'Checking…';
   action.className = 'action';
   tr.append(name, status, action);
+  let downloading = false;
 
   const refresh = async () => {
     action.replaceChildren();
@@ -122,17 +123,42 @@ function packRow(label: string, key: string, check: () => Promise<AIAvailability
     const [text, cls] = STATUS[a];
     status.textContent = text;
     status.className = `status ${cls}`;
+    // Chrome keeps downloading in the background (also after this page closes, or when the
+    // download started elsewhere): keep checking until it lands.
+    if (a === 'downloading' && !downloading) setTimeout(() => tr.isConnected && !downloading && refresh(), 5000);
     if (a === 'downloadable' || a === 'downloading') {
       const b = document.createElement('button');
       b.className = 'primary';
       b.textContent = 'Download';
       b.onclick = () => {
         // create() needs the click's user activation, so call it before anything else awaits.
+        downloading = true;
+        // Downloads can report nothing for a while: animate until they do.
         const progress = document.createElement('progress');
         progress.max = 1;
-        progress.value = 0;
+        progress.title = 'This can take a while. You can close this page; Chrome keeps downloading.';
         action.replaceChildren(progress);
-        download((e) => (progress.value = e.loaded)).then(refresh, async (err) => {
+        status.textContent = 'Downloading…';
+        status.className = 'status warn';
+        const poll = window.setInterval(async () => {
+          if (!tr.isConnected) return window.clearInterval(poll);
+          if ((await check().catch(() => null)) === 'available') {
+            window.clearInterval(poll);
+            downloading = false;
+            refresh();
+          }
+        }, 5000);
+        const onProgress = (e: AIDownloadProgressEvent) => {
+          if (e.loaded <= 0) return;
+          progress.value = e.loaded;
+          status.textContent = `Downloading… ${Math.round(e.loaded * 100)}%`;
+        };
+        const done = () => {
+          window.clearInterval(poll);
+          downloading = false;
+        };
+        download(onProgress).then(() => (done(), refresh()), async (err) => {
+          done();
           // The first download also fetches Chrome's translation engine, and creating a
           // translator before that lands fails even though the pack itself installs.
           // Show the real state afterwards, and keep retrying possible.
