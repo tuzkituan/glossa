@@ -23,9 +23,10 @@ export interface Settings {
 }
 
 export function defaults(): Settings {
+  // A Vietnamese speaker at an English-speaking company: read in Vietnamese, write in English.
   return {
     target: 'vi',
-    replyMode: 'match',
+    replyMode: 'fixed',
     replyLang: 'en',
     languages: ['en'],
     messageButtons: { googleChat: true, messenger: true, linkedin: true },
