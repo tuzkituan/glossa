@@ -3,9 +3,10 @@ import { ComposerButtons } from '@/lib/composer';
 import { sameLanguage } from '@/lib/languages';
 import { MessageButtons } from '@/lib/messages';
 import { send, type Failure } from '@/lib/messaging';
-import { focusedEditable, translateDraft } from '@/lib/reply';
+import { fixDraft, focusedEditable, translateDraft } from '@/lib/reply';
 import { loadSettings, watchSettings } from '@/lib/settings';
 import { siteFor } from '@/lib/sites';
+import { FIX_ICON, TRANSLATE_ICON } from '@/lib/sites/types';
 import { hidePopups, isOwnEvent, showButton, showCard, toast } from '@/lib/ui/overlay';
 
 const MAX_SELECTION = 5000;
@@ -38,11 +39,20 @@ export default defineContentScript({
     const buttons = site ? new MessageButtons(site, () => settings, onMessageFailure) : null;
     if (site) buttons!.setEnabled(settings.messageButtons[site.id]);
     const composers = site
-      ? new ComposerButtons(
-          site,
-          (editor) => translateDraft(editor, settings, site, openSettings),
-          () => settings.replyKey,
-        )
+      ? new ComposerButtons(site, [
+          {
+            id: 'translate',
+            icon: TRANSLATE_ICON,
+            label: () => `Translate my draft (${settings.replyKey})`,
+            run: (editor) => translateDraft(editor, settings, site, openSettings),
+          },
+          {
+            id: 'fix',
+            icon: FIX_ICON,
+            label: () => `Fix my English (${settings.fixKey})`,
+            run: (editor) => fixDraft(editor, () => openSettings()),
+          },
+        ])
       : null;
     if (site) composers!.setEnabled(settings.messageButtons[site.id]);
 
@@ -114,12 +124,14 @@ export default defineContentScript({
       'keydown',
       (e) => {
         if (e.key === 'Escape') hidePopups();
-        if (keyCombo(e) !== settings.replyKey) return;
+        const combo = keyCombo(e);
+        if (combo !== settings.replyKey && combo !== settings.fixKey) return;
         const el = focusedEditable();
         if (!el) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        translateDraft(el, settings, site, openSettings);
+        if (combo === settings.replyKey) translateDraft(el, settings, site, openSettings);
+        else fixDraft(el, () => openSettings());
       },
       true,
     );

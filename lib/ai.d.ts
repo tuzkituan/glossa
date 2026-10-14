@@ -48,3 +48,33 @@ declare var LanguageDetector: {
   availability(options?: { expectedInputLanguages?: string[] }): Promise<AIAvailability>;
   create(options?: AICreateOptions & { expectedInputLanguages?: string[] }): Promise<LanguageDetector>;
 };
+
+// Prompt API (Gemini Nano), stable for extensions since Chrome 138.
+// https://developer.chrome.com/docs/ai/prompt-api
+
+interface LanguageModelMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface LanguageModelExpected {
+  type: 'text';
+  languages?: string[];
+}
+
+interface LanguageModelOptions {
+  initialPrompts?: LanguageModelMessage[];
+  expectedInputs?: LanguageModelExpected[];
+  expectedOutputs?: LanguageModelExpected[];
+}
+
+interface LanguageModel {
+  prompt(input: string, options?: { signal?: AbortSignal }): Promise<string>;
+  clone(): Promise<LanguageModel>;
+  destroy(): void;
+}
+
+declare var LanguageModel: {
+  availability(options?: LanguageModelOptions): Promise<AIAvailability>;
+  create(options?: LanguageModelOptions & AICreateOptions): Promise<LanguageModel>;
+};

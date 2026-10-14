@@ -5,6 +5,8 @@ import { sameLanguage } from './languages';
 import type {
   DetectResponse,
   Failure,
+  ProofreadRequest,
+  ProofreadResponse,
   TranslateManyRequest,
   TranslateManyResponse,
   TranslateRequest,
@@ -20,6 +22,8 @@ export interface Backend {
   detect(text: string): Promise<LanguageDetectionResult[]>;
   /** Translate several plain pieces in one go. */
   translate(texts: string[], source: string, target: string): Promise<string[]>;
+  /** Fix spelling and grammar in several plain English pieces. */
+  proofread(texts: string[]): Promise<string[]>;
 }
 
 let backend: Backend;
@@ -99,12 +103,17 @@ function restoreCase(source: string, translated: string): string {
 }
 
 /**
- * Translate texts from source to target, line by line so line breaks survive, with all
- * uncached lines sent to the backend in one call. Keeps code names' casing and all-caps lines.
+ * Run texts through the backend line by line so line breaks survive, with all uncached
+ * lines sent in one call. `finish` adjusts each line's result; code names keep their casing.
  */
-async function translateTexts(texts: string[], source: string, target: string): Promise<string[]> {
+async function perLine(
+  texts: string[],
+  cacheKey: string,
+  run: (pieces: string[]) => Promise<string[]>,
+  finish: (raw: string, out: string) => string,
+): Promise<string[]> {
   const results: (string | undefined)[] = texts.map((t) => {
-    const key = `${source}>${target}|${t}`;
+    const key = `${cacheKey}|${t}`;
     const hit = cache.get(key);
     if (hit !== undefined) remember(key, hit);
     return hit;
@@ -118,18 +127,26 @@ async function translateTexts(texts: string[], source: string, target: string): 
       return { at: pieces.length - 1, raw: p };
     }),
   );
-  const translated = pieces.length ? await backend.translate(pieces, source, target) : [];
+  const done = pieces.length ? await run(pieces) : [];
   pending.forEach((i, n) => {
-    const out = layout[n]!.map((part) => {
-      if (part.at === undefined) return part.raw;
-      const t = translated[part.at] ?? part.raw;
-      return shouting(part.raw) ? t.toLocaleUpperCase(target) : t;
-    });
+    const out = layout[n]!.map((part) =>
+      part.at === undefined ? part.raw : finish(part.raw, done[part.at] ?? part.raw),
+    );
     const result = restoreCase(texts[i]!, out.join(''));
-    remember(`${source}>${target}|${texts[i]}`, result);
+    remember(`${cacheKey}|${texts[i]}`, result);
     results[i] = result;
   });
   return results as string[];
+}
+
+/** Translate texts from source to target, keeping all-caps lines in capitals. */
+function translateTexts(texts: string[], source: string, target: string): Promise<string[]> {
+  return perLine(
+    texts,
+    `${source}>${target}`,
+    (pieces) => backend.translate(pieces, source, target),
+    (raw, out) => (shouting(raw) ? out.toLocaleUpperCase(target) : out),
+  );
 }
 
 export async function translate(req: TranslateRequest): Promise<TranslateResponse> {
@@ -159,6 +176,21 @@ export async function translateMany(req: TranslateManyRequest): Promise<Translat
   try {
     if (sameLanguage(req.source, req.target)) return { ok: true, texts: req.texts };
     return { ok: true, texts: await translateTexts(req.texts, req.source, req.target) };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function proofread(req: ProofreadRequest): Promise<ProofreadResponse> {
+  try {
+    const texts = await perLine(
+      req.texts,
+      'proofread',
+      (pieces) => backend.proofread(pieces),
+      // Keep the line's own surrounding spaces.
+      (raw, out) => /^\s*/.exec(raw)![0] + out.trim() + /\s*$/.exec(raw)![0],
+    );
+    return { ok: true, texts };
   } catch (e) {
     return fail(e);
   }

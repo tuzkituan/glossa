@@ -1,4 +1,4 @@
-// Translate the draft in the focused text box before sending.
+// Translate or fix the draft in the focused text box before sending.
 import { languageName, likelyLanguage, otherLanguage, sameLanguage } from './languages';
 import { send } from './messaging';
 import type { Settings } from './settings';
@@ -68,8 +68,8 @@ async function incomingLanguage(site: SiteAdapter, draftLang: string): Promise<s
 
 /**
  * Rich text boxes: replace only the runs of words between chips, so @mentions and other
- * non-editable pieces survive. Each run goes through insertText (last run first, so earlier
- * ranges stay valid). Returns how many edits were made, for undo.
+ * non-editable pieces survive. Each changed run goes through insertText (last run first, so
+ * earlier ranges stay valid). Returns how many edits were made, for undo.
  */
 function replaceRuns(el: HTMLElement, segs: Segment[], texts: string[]): number {
   el.focus();
@@ -79,7 +79,7 @@ function replaceRuns(el: HTMLElement, segs: Segment[], texts: string[]): number 
     const { nodes, text } = segs[i]!;
     const first = nodes[0]!;
     const last = nodes.at(-1)!;
-    if (!first.isConnected || !last.isConnected) continue;
+    if (!first.isConnected || !last.isConnected || texts[i]!.trim() === text.trim()) continue;
     const lead = /^\s*/.exec(text)![0];
     const trail = /\s*$/.exec(text)![0];
     const range = document.createRange();
@@ -91,6 +91,16 @@ function replaceRuns(el: HTMLElement, segs: Segment[], texts: string[]): number 
   }
   sel.collapse(el, el.childNodes.length);
   return edits;
+}
+
+function undoAction(el: HTMLElement, edits: number) {
+  return {
+    label: 'Undo',
+    run: () => {
+      el.focus();
+      for (let i = 0; i < edits; i++) document.execCommand('undo');
+    },
+  };
 }
 
 export async function translateDraft(
@@ -143,13 +153,7 @@ export async function translateDraft(
       return;
     }
     const edits = replaceRuns(el, segs, many.texts);
-    toast(`Translated to ${languageName(target)}`, anchor, {
-      label: 'Undo',
-      run: () => {
-        el.focus();
-        for (let i = 0; i < edits; i++) document.execCommand('undo');
-      },
-    }, 6000);
+    toast(`Translated to ${languageName(target)}`, anchor, undoAction(el, edits), 6000);
     return;
   }
 
@@ -165,4 +169,42 @@ export async function translateDraft(
   }
   replaceText(el, res.text);
   toast(`Translated to ${languageName(target)} · Ctrl+Z to undo`, anchor);
+}
+
+/** Fix spelling and grammar of an English draft in place, keeping chips like translation does. */
+export async function fixDraft(el: Editable, openSettings: () => void) {
+  const text = readText(el).trim();
+  if (!text) return;
+  const anchor = el.getBoundingClientRect();
+  toast('Checking…', anchor, undefined, 0);
+
+  // Only refuse when the detector is sure; short chat often gets odd guesses.
+  const det = await send({ type: 'detect', text });
+  if (det.ok && det.lang !== 'und' && det.confidence >= 0.7 && !sameLanguage(det.lang, 'en')) {
+    toast(`Fix works on English only; this looks like ${languageName(det.lang)}`, anchor);
+    return;
+  }
+
+  const plain = el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement;
+  const segs = plain ? [] : segments(el);
+  const res = await send({ type: 'proofread', texts: plain ? [text] : segs.map((x) => x.text) });
+  if (!res.ok) {
+    toast(res.message, anchor, { label: 'Settings', run: openSettings }, 6000);
+    return;
+  }
+  if (plain) {
+    if (res.texts[0]!.trim() === text) {
+      toast('No mistakes found', anchor);
+      return;
+    }
+    replaceText(el, res.texts[0]!.trim());
+    toast('Fixed · Ctrl+Z to undo', anchor);
+    return;
+  }
+  const edits = replaceRuns(el, segs, res.texts);
+  if (!edits) {
+    toast('No mistakes found', anchor);
+    return;
+  }
+  toast('Fixed', anchor, undoAction(el, edits), 6000);
 }

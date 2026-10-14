@@ -13,6 +13,8 @@ export interface Settings {
   messageButtons: Record<SiteId, boolean>;
   selectionButton: boolean;
   replyKey: string;
+  /** Fix spelling and grammar of an English draft. */
+  fixKey: string;
 }
 
 export function defaults(): Settings {
@@ -24,6 +26,7 @@ export function defaults(): Settings {
     messageButtons: { googleChat: true, messenger: true, linkedin: true },
     selectionButton: true,
     replyKey: 'Alt+Enter',
+    fixKey: 'Alt+G',
   };
 }
 

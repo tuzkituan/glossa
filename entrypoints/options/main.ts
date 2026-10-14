@@ -1,4 +1,5 @@
 import { isCompleteCombo, keyCombo } from '@/lib/keys';
+import { PROOFREAD_MODEL } from '@/lib/backends/builtin';
 import { languageName, languageOptions, sameLanguage } from '@/lib/languages';
 import { loadSettings, saveSettings, type Settings } from '@/lib/settings';
 import { SITES } from '@/lib/sites';
@@ -24,7 +25,7 @@ $('no-api').hidden = hasApi || FIREFOX;
 if (FIREFOX) {
   $('packs-card').hidden = true;
   $('privacy').textContent =
-    'Translation uses Google Translate: the text you translate is sent to Google. Nothing is sent until you ask for a translation.';
+    'Translation uses Google Translate and Fix English uses LanguageTool: the text you translate or fix is sent to them. Nothing is sent until you ask.';
 }
 
 async function update(patch: Partial<Settings>) {
@@ -172,6 +173,16 @@ function renderPacks() {
           d.destroy(),
         ),
     ),
+    packRow(
+      'English proofreading (Gemini Nano)',
+      'proofread',
+      async () => (typeof LanguageModel === 'undefined' ? 'unavailable' : LanguageModel.availability(PROOFREAD_MODEL)),
+      (onProgress) =>
+        LanguageModel.create({
+          ...PROOFREAD_MODEL,
+          monitor: (m) => m.addEventListener('downloadprogress', onProgress),
+        }).then((m) => m.destroy()),
+    ),
     ...pairs().map(([a, b]) =>
       packRow(
         `${languageName(a)} → ${languageName(b)}`,
@@ -217,15 +228,21 @@ function renderSites() {
 
 // Shortcuts
 
-const replyKey = $<HTMLInputElement>('replyKey');
-replyKey.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') return;
-  e.preventDefault();
-  const combo = keyCombo(e);
-  replyKey.value = combo;
-  if (isCompleteCombo(combo)) update({ replyKey: combo });
-});
-replyKey.addEventListener('blur', () => (replyKey.value = settings.replyKey));
+function shortcutInput(id: 'replyKey' | 'fixKey') {
+  const input = $<HTMLInputElement>(id);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') return;
+    e.preventDefault();
+    const combo = keyCombo(e);
+    input.value = combo;
+    if (isCompleteCombo(combo)) update({ [id]: combo });
+  });
+  input.addEventListener('blur', () => (input.value = settings[id]));
+  return input;
+}
+
+const replyKey = shortcutInput('replyKey');
+const fixKey = shortcutInput('fixKey');
 
 const selectionButton = $<HTMLInputElement>('selectionButton');
 selectionButton.onchange = () => update({ selectionButton: selectionButton.checked });
@@ -244,6 +261,7 @@ function render() {
   renderPacks();
   renderSites();
   replyKey.value = settings.replyKey;
+  fixKey.value = settings.fixKey;
   selectionButton.checked = settings.selectionButton;
 }
 

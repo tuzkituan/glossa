@@ -23,6 +23,12 @@ export interface TranslateManyRequest {
   target: string;
 }
 
+/** Fix spelling and grammar in several pieces of one English draft. */
+export interface ProofreadRequest {
+  type: 'proofread';
+  texts: string[];
+}
+
 export interface DetectRequest {
   type: 'detect';
   text: string;
@@ -33,7 +39,12 @@ export interface OpenOptionsRequest {
   pair?: [string, string];
 }
 
-export type Request = TranslateRequest | TranslateManyRequest | DetectRequest | OpenOptionsRequest;
+export type Request =
+  | TranslateRequest
+  | TranslateManyRequest
+  | ProofreadRequest
+  | DetectRequest
+  | OpenOptionsRequest;
 
 export interface Failure {
   ok: false;
@@ -48,6 +59,8 @@ export type TranslateResponse =
   | Failure;
 
 export type TranslateManyResponse = { ok: true; texts: string[] } | Failure;
+
+export type ProofreadResponse = { ok: true; texts: string[] } | Failure;
 
 export interface Candidate {
   lang: string;
@@ -64,6 +77,7 @@ export const OFFSCREEN = 'glossa-offscreen';
 
 export async function send(req: TranslateRequest): Promise<TranslateResponse>;
 export async function send(req: TranslateManyRequest): Promise<TranslateManyResponse>;
+export async function send(req: ProofreadRequest): Promise<ProofreadResponse>;
 export async function send(req: DetectRequest): Promise<DetectResponse>;
 export async function send(req: OpenOptionsRequest): Promise<void>;
 export async function send(req: Request): Promise<unknown> {

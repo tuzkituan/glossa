@@ -20,11 +20,12 @@ export interface SiteAdapter {
     /** A button styled like the site's own toolbar buttons. */
     button(): ToolbarButton;
   };
-  /** Message boxes, where a Translate-draft button goes next to the site's own icons. */
+  /** Message boxes, where draft buttons (Translate, Fix) go next to the site's own icons. */
   composer?: {
-    /** Each composer on the page: its text box and the element to insert the button before. */
+    /** Each composer on the page: its text box and the element to insert the buttons before. */
     find(): { editor: HTMLElement; slot: Element }[];
-    button(): ToolbarButton;
+    /** A button showing the given SVG path. */
+    button(icon: string): ToolbarButton;
   };
 }
 
@@ -36,6 +37,10 @@ export interface ToolbarButton {
 /** Material "translate" icon. */
 export const TRANSLATE_ICON =
   'M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z';
+
+/** Material "spellcheck" icon. */
+export const FIX_ICON =
+  'M12.45 16h2.09L9.43 3H7.57L2.46 16h2.09l1.12-3h5.64l1.14 3zm-6.02-5L8.5 5.48 10.57 11H6.43zm15.16.59l-8.09 8.09L9.83 16l-1.41 1.41 5.09 5.09L23 13l-1.41-1.41z';
 
 /** Climb from a message to its own container, stopping before one that holds other messages. */
 export function* ownAncestors(el: HTMLElement, others: HTMLElement[], max = 10): Generator<HTMLElement> {

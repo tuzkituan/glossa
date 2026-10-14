@@ -1,5 +1,6 @@
 import { google } from '@/lib/backends/google';
-import { detect, translate, translateMany, useBackend } from '@/lib/engine';
+import { languageTool } from '@/lib/backends/languagetool';
+import { detect, proofread, translate, translateMany, useBackend } from '@/lib/engine';
 import { OFFSCREEN, type Request } from '@/lib/messaging';
 
 const OFFSCREEN_URL = '/offscreen.html';
@@ -22,14 +23,16 @@ async function ensureOffscreen() {
 }
 
 // Firefox has no on-device translation API and no offscreen documents: translate right here
-// with Google Translate. Chrome runs its on-device models in the offscreen document.
+// with Google Translate, and proofread with LanguageTool. Chrome runs its on-device models
+// in the offscreen document.
 const FIREFOX = import.meta.env.FIREFOX;
-if (FIREFOX) useBackend(google);
+if (FIREFOX) useBackend({ ...google, proofread: languageTool });
 
 async function forward(msg: Request) {
   if (FIREFOX) {
     if (msg.type === 'translate') return translate(msg);
     if (msg.type === 'translate-many') return translateMany(msg);
+    if (msg.type === 'proofread') return proofread(msg);
     if (msg.type === 'detect') return detect(msg.text);
     return;
   }
@@ -62,7 +65,7 @@ export default defineBackground(() => {
 
   browser.runtime.onMessage.addListener((msg: Request & { dest?: string }, _sender, sendResponse) => {
     if (msg.dest === OFFSCREEN) return;
-    if (msg.type === 'translate' || msg.type === 'translate-many' || msg.type === 'detect') {
+    if (msg.type === 'translate' || msg.type === 'translate-many' || msg.type === 'proofread' || msg.type === 'detect') {
       forward(msg).then(sendResponse, (e) =>
         sendResponse({ ok: false, code: 'error', message: String(e?.message ?? e) }),
       );
