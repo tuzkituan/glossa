@@ -1,7 +1,9 @@
+import { gemini } from '@/lib/backends/gemini';
 import { google } from '@/lib/backends/google';
 import { languageTool } from '@/lib/backends/languagetool';
 import { detect, proofread, translate, translateMany, useBackend } from '@/lib/engine';
-import { OFFSCREEN, type Request } from '@/lib/messaging';
+import { OFFSCREEN, type ProofreadRequest, type Request } from '@/lib/messaging';
+import { loadGeminiKey, loadSettings } from '@/lib/settings';
 
 const OFFSCREEN_URL = '/offscreen.html';
 const MENU_ID = 'glossa-translate';
@@ -23,16 +25,22 @@ async function ensureOffscreen() {
 }
 
 // Firefox has no on-device translation API and no offscreen documents: translate right here
-// with Google Translate, and proofread with LanguageTool. Chrome runs its on-device models
-// in the offscreen document.
+// with Google Translate. Chrome runs its on-device models in the offscreen document.
 const FIREFOX = import.meta.env.FIREFOX;
-if (FIREFOX) useBackend({ ...google, proofread: languageTool });
+if (FIREFOX) useBackend(google);
+
+/** Fix English runs here on both browsers: it calls a hosted service, not an on-device model. */
+async function fixEnglish(msg: ProofreadRequest) {
+  const { proofreader, geminiModel } = await loadSettings();
+  if (proofreader === 'gemini') return proofread(msg, gemini(await loadGeminiKey(), geminiModel), 'gemini');
+  return proofread(msg, languageTool, 'languagetool');
+}
 
 async function forward(msg: Request) {
+  if (msg.type === 'proofread') return fixEnglish(msg);
   if (FIREFOX) {
     if (msg.type === 'translate') return translate(msg);
     if (msg.type === 'translate-many') return translateMany(msg);
-    if (msg.type === 'proofread') return proofread(msg);
     if (msg.type === 'detect') return detect(msg.text);
     return;
   }

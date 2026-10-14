@@ -1,7 +1,6 @@
 import { isCompleteCombo, keyCombo } from '@/lib/keys';
-import { PROOFREAD_MODEL } from '@/lib/backends/builtin';
 import { languageName, languageOptions, sameLanguage } from '@/lib/languages';
-import { loadSettings, saveSettings, type Settings } from '@/lib/settings';
+import { loadGeminiKey, loadSettings, saveGeminiKey, saveSettings, type Settings } from '@/lib/settings';
 import { SITES } from '@/lib/sites';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -25,7 +24,7 @@ $('no-api').hidden = hasApi || FIREFOX;
 if (FIREFOX) {
   $('packs-card').hidden = true;
   $('privacy').textContent =
-    'Translation uses Google Translate and Fix English uses LanguageTool: the text you translate or fix is sent to them. Nothing is sent until you ask.';
+    'Translation uses Google Translate and Fix English uses LanguageTool or Gemini: the text you translate or fix is sent to them. Nothing is sent until you ask.';
 }
 
 async function update(patch: Partial<Settings>) {
@@ -199,16 +198,6 @@ function renderPacks() {
           d.destroy(),
         ),
     ),
-    packRow(
-      'English proofreading (Gemini Nano)',
-      'proofread',
-      async () => (typeof LanguageModel === 'undefined' ? 'unavailable' : LanguageModel.availability(PROOFREAD_MODEL)),
-      (onProgress) =>
-        LanguageModel.create({
-          ...PROOFREAD_MODEL,
-          monitor: (m) => m.addEventListener('downloadprogress', onProgress),
-        }).then((m) => m.destroy()),
-    ),
     ...pairs().map(([a, b]) =>
       packRow(
         `${languageName(a)} → ${languageName(b)}`,
@@ -252,6 +241,29 @@ function renderSites() {
   );
 }
 
+// Fix English
+
+for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="proofreader"]')) {
+  radio.onchange = () => update({ proofreader: radio.value as Settings['proofreader'] });
+}
+const geminiKey = $<HTMLInputElement>('geminiKey');
+const geminiModel = $<HTMLInputElement>('geminiModel');
+geminiKey.value = await loadGeminiKey();
+geminiKey.onchange = () => saveGeminiKey(geminiKey.value);
+geminiModel.onchange = () => update({ geminiModel: geminiModel.value.trim() || 'gemini-3.5-flash-lite' });
+
+function renderProofreader() {
+  for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="proofreader"]')) {
+    radio.checked = radio.value === (settings.proofreader === 'gemini' ? 'gemini' : 'languagetool');
+  }
+  $('geminiFields').hidden = settings.proofreader !== 'gemini';
+  if (!FIREFOX) {
+    const service = settings.proofreader === 'gemini' ? 'Google Gemini' : 'LanguageTool';
+    $('privacy').textContent = `Translation runs on this device with Chrome's built-in models. Drafts you fix are sent to ${service}.`;
+  }
+  geminiModel.value = settings.geminiModel;
+}
+
 // Shortcuts
 
 function shortcutInput(id: 'replyKey' | 'fixKey') {
@@ -286,6 +298,7 @@ function render() {
   renderLanguages();
   renderPacks();
   renderSites();
+  renderProofreader();
   replyKey.value = settings.replyKey;
   fixKey.value = settings.fixKey;
   selectionButton.checked = settings.selectionButton;

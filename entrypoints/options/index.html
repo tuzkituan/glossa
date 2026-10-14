@@ -44,7 +44,7 @@
 
       <section class="card" id="packs-card">
         <h2>Language packs</h2>
-        <p class="hint">Chrome downloads each model once and keeps it. Fix English needs Gemini Nano, which wants about 22 GB free disk and a capable GPU or 16 GB RAM. Packs must be downloaded here before pages can use them.</p>
+        <p class="hint">Chrome downloads each model once and keeps it. Packs must be downloaded here before pages can use them.</p>
         <table id="packs"><tbody></tbody></table>
         <div class="inline add-pair">
           <select id="pairFrom" aria-label="From"></select> →
@@ -57,6 +57,26 @@
         <h2>Chats</h2>
         <div id="sites"></div>
         <p class="hint">Every message gets a Translate button. Messages already in your language are translated into your reply language.</p>
+      </section>
+
+      <section class="card">
+        <h2>Fix English</h2>
+        <div class="field">
+          <span class="label">Fix my drafts with</span>
+          <label class="row"><input type="radio" name="proofreader" value="languagetool" /> LanguageTool, no setup (drafts you fix go to LanguageTool)</label>
+          <label class="row"><input type="radio" name="proofreader" value="gemini" /> Gemini API with your free key (drafts you fix go to Google)</label>
+        </div>
+        <div id="geminiFields" hidden>
+          <div class="field">
+            <label for="geminiKey">Gemini API key</label>
+            <input type="password" id="geminiKey" autocomplete="off" spellcheck="false" />
+            <p class="hint">Get one free at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Kept on this computer only.</p>
+          </div>
+          <div class="field">
+            <label for="geminiModel">Model</label>
+            <input type="text" id="geminiModel" spellcheck="false" />
+          </div>
+        </div>
       </section>
 
       <section class="card">

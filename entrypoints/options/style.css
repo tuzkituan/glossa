@@ -19,7 +19,8 @@ tr.highlight td { background: color-mix(in srgb, var(--accent) 10%, transparent)
 .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
 progress { width: 100px; }
 .add-pair { margin-top: 12px; }
-#replyKey { width: 160px; cursor: pointer; }
+#replyKey, #fixKey { width: 160px; cursor: pointer; }
+#geminiKey, #geminiModel { width: 100%; max-width: 360px; }
 a { color: var(--accent); }
 @media (max-width: 520px) {
   .field select { min-width: 0; width: 100%; }

@@ -22,8 +22,6 @@ export interface Backend {
   detect(text: string): Promise<LanguageDetectionResult[]>;
   /** Translate several plain pieces in one go. */
   translate(texts: string[], source: string, target: string): Promise<string[]>;
-  /** Fix spelling and grammar in several plain English pieces. */
-  proofread(texts: string[]): Promise<string[]>;
 }
 
 let backend: Backend;
@@ -181,12 +179,17 @@ export async function translateMany(req: TranslateManyRequest): Promise<Translat
   }
 }
 
-export async function proofread(req: ProofreadRequest): Promise<ProofreadResponse> {
+/** Fix English with `run`, a hosted service named `name` for caching. */
+export async function proofread(
+  req: ProofreadRequest,
+  run: (texts: string[]) => Promise<string[]>,
+  name: string,
+): Promise<ProofreadResponse> {
   try {
     const texts = await perLine(
       req.texts,
-      'proofread',
-      (pieces) => backend.proofread(pieces),
+      `proofread:${name}`,
+      run,
       // Keep the line's own surrounding spaces.
       (raw, out) => /^\s*/.exec(raw)![0] + out.trim() + /\s*$/.exec(raw)![0],
     );

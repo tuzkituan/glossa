@@ -33,7 +33,7 @@ function textOf(item: unknown): string {
   return Array.isArray(item) ? String(item[0] ?? '') : String(item ?? '');
 }
 
-export const google: Omit<Backend, 'proofread'> = {
+export const google: Backend = {
   async detect(text) {
     const [item] = await call([text], 'auto', 'en');
     const lang = Array.isArray(item) ? String(item[1] ?? 'und') : 'und';

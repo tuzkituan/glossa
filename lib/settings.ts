@@ -1,5 +1,8 @@
 export type SiteId = 'googleChat' | 'messenger' | 'linkedin';
 
+/** What fixes English drafts: LanguageTool (no setup) or the Gemini API with the user's key. */
+export type Proofreader = 'languagetool' | 'gemini';
+
 export interface Settings {
   /** Language that incoming messages and selections are translated into. */
   target: string;
@@ -15,6 +18,8 @@ export interface Settings {
   replyKey: string;
   /** Fix spelling and grammar of an English draft. */
   fixKey: string;
+  proofreader: Proofreader;
+  geminiModel: string;
 }
 
 export function defaults(): Settings {
@@ -27,6 +32,8 @@ export function defaults(): Settings {
     selectionButton: true,
     replyKey: 'Alt+Enter',
     fixKey: 'Alt+G',
+    proofreader: 'languagetool',
+    geminiModel: 'gemini-3.5-flash-lite',
   };
 }
 
@@ -51,4 +58,13 @@ export function watchSettings(cb: (s: Settings) => void): void {
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'sync' && changes.settings) loadSettings().then(cb);
   });
+}
+
+// The API key stays on this computer: local storage, not synced with the browser account.
+export async function loadGeminiKey(): Promise<string> {
+  return ((await browser.storage.local.get('geminiKey')).geminiKey as string | undefined) ?? '';
+}
+
+export async function saveGeminiKey(key: string): Promise<void> {
+  await browser.storage.local.set({ geminiKey: key.trim() });
 }
