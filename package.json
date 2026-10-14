@@ -2,7 +2,7 @@
   "name": "glossa",
   "description": "Translate chats and selected text, and fix the English in your drafts, with Chrome's built-in AI",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",
