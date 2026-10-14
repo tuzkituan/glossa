@@ -3,6 +3,7 @@ import { languageName, sameLanguage } from './languages';
 import { send } from './messaging';
 import type { Settings } from './settings';
 import type { SiteAdapter } from './sites';
+import { segments, type Segment } from './format';
 import { readableText } from './text';
 import { toast } from './ui/overlay';
 
@@ -65,6 +66,33 @@ async function incomingLanguage(site: SiteAdapter, draftLang: string): Promise<s
   return sawDraftLang ? draftLang : null;
 }
 
+/**
+ * Rich text boxes: replace only the runs of words between chips, so @mentions and other
+ * non-editable pieces survive. Each run goes through insertText (last run first, so earlier
+ * ranges stay valid). Returns how many edits were made, for undo.
+ */
+function replaceRuns(el: HTMLElement, segs: Segment[], texts: string[]): number {
+  el.focus();
+  const sel = window.getSelection()!;
+  let edits = 0;
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const { nodes, text } = segs[i]!;
+    const first = nodes[0]!;
+    const last = nodes.at(-1)!;
+    if (!first.isConnected || !last.isConnected) continue;
+    const lead = /^\s*/.exec(text)![0];
+    const trail = /\s*$/.exec(text)![0];
+    const range = document.createRange();
+    range.setStart(first, 0);
+    range.setEnd(last, last.length);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    if (document.execCommand('insertText', false, lead + texts[i]!.trim() + trail)) edits++;
+  }
+  sel.collapse(el, el.childNodes.length);
+  return edits;
+}
+
 export async function translateDraft(
   el: Editable,
   settings: Settings,
@@ -85,10 +113,34 @@ export async function translateDraft(
 
   let target = settings.replyLang;
   if (settings.replyMode === 'match' && site && source) {
-    target = (await incomingLanguage(site, source)) ?? settings.replyLang;
+    const theirs = await incomingLanguage(site, source);
+    // They write in my draft's language too: translating into it would do nothing,
+    // and asking to translate means I want another language, so use the reply language.
+    if (theirs && !sameLanguage(theirs, source)) target = theirs;
   }
   if (source && sameLanguage(source, target)) {
     toast(`Already in ${languageName(target)}`, anchor);
+    return;
+  }
+
+  // Rich editors with chips: translate run by run and keep the chips.
+  if (!(el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) && source) {
+    const segs = segments(el);
+    const many = await send({ type: 'translate-many', texts: segs.map((x) => x.text), source, target });
+    if (!many.ok) {
+      const pair: [string, string] | undefined =
+        many.source && many.target ? [many.source, many.target] : undefined;
+      toast(many.message, anchor, { label: 'Settings', run: () => openSettings(pair) }, 6000);
+      return;
+    }
+    const edits = replaceRuns(el, segs, many.texts);
+    toast(`Translated to ${languageName(target)}`, anchor, {
+      label: 'Undo',
+      run: () => {
+        el.focus();
+        for (let i = 0; i < edits; i++) document.execCommand('undo');
+      },
+    }, 6000);
     return;
   }
 

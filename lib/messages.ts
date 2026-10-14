@@ -10,8 +10,6 @@ import { segments, translatedCopy } from './format';
 import { readableText } from './text';
 
 const CONCURRENCY = 2;
-/** Below this, a message gets no button: the language is a guess. */
-const MIN_CONFIDENCE = 0.5;
 
 const BUTTON_CSS = `
 :host { display: inline-flex; align-items: center; vertical-align: middle; margin-left: 4px; }
@@ -26,7 +24,9 @@ button:disabled { cursor: default; opacity: .6; }
 `;
 
 interface Entry {
-  source: string;
+  /** Detected on first click. */
+  source?: string;
+  target?: string;
   /** The Translate chip. */
   button?: HTMLElement;
   inRow?: boolean;
@@ -247,28 +247,17 @@ export class MessageButtons {
     }
   }
 
-  /** Decide whether a message gets a button: incoming, and in another language. */
+  /** Every message gets a button; its language is detected when it's clicked. */
   private async process(el: HTMLElement) {
     if (!this.active || !el.isConnected) return;
     const text = readableText(el);
     if (!text) return;
-    if (this.site.isOutgoing(el)) {
-      this.done.set(el, text);
-      return;
-    }
-    const res = await send({ type: 'detect', text });
-    if (!this.active) return;
-    if (!res.ok) {
-      this.failed.set(el, this.gen);
-      this.onFailure(res);
-      return;
-    }
     this.done.set(el, text);
-    if (res.confidence < MIN_CONFIDENCE || sameLanguage(res.lang, this.settings().target)) return;
-    const entry: Entry = { source: res.lang };
+    const entry: Entry = {};
     this.entries.set(el, entry);
     this.place(el, entry, this.messages());
   }
+
 
   /** Put the copy after the message, the toolbar button in the site's toolbar, and the chip by the reactions. */
   private place(el: HTMLElement, entry: Entry, messages: HTMLElement[]) {
@@ -328,12 +317,7 @@ export class MessageButtons {
       entry.busy = true;
       this.refresh(entry);
       const segs = segments(el);
-      const res = await send({
-        type: 'translate-many',
-        texts: segs.map((s) => s.text),
-        source: entry.source,
-        target: this.settings().target,
-      });
+      const res = await this.translateRuns(el, entry, segs.map((s) => s.text));
       entry.busy = false;
       if (!res.ok) {
         this.refresh(entry);
@@ -342,7 +326,7 @@ export class MessageButtons {
       }
       const copy = translatedCopy(el, segs, res.texts);
       copy.setAttribute(COPY, '');
-      copy.title = `Translated from ${languageName(entry.source)} by Glossa`;
+      copy.title = `Translated from ${languageName(entry.source!)} by Glossa`;
       // Recolour the bubble itself rather than the copy, so its shape stays exactly as drawn.
       const bubble = findBubble(el, this.messages());
       if (bubble) {
@@ -361,11 +345,33 @@ export class MessageButtons {
     this.refresh(entry);
   }
 
+  /**
+   * Detect the message's language, then translate into my language; a message already
+   * in my language goes into the reply language instead.
+   */
+  private async translateRuns(el: HTMLElement, entry: Entry, texts: string[]) {
+    if (!entry.source) {
+      const det = await send({ type: 'detect', text: readableText(el) });
+      if (!det.ok) return det;
+      if (det.lang === 'und') {
+        return { ok: false as const, code: 'uncertain' as const, message: "Couldn't tell which language this is." };
+      }
+      entry.source = det.lang;
+    }
+    const { target, replyLang } = this.settings();
+    entry.target = sameLanguage(entry.source, target) ? replyLang : target;
+    if (sameLanguage(entry.source, entry.target)) {
+      return { ok: false as const, code: 'error' as const, message: `Already in ${languageName(entry.target)}.` };
+    }
+    return send({ type: 'translate-many', texts, source: entry.source, target: entry.target });
+  }
+
   /** Sync the chip's and toolbar button's labels with the entry's state. */
   private refresh(entry: Entry) {
-    const from = languageName(entry.source);
     const label = entry.busy ? 'Translating…' : entry.showing ? 'Show original' : 'Translate';
-    const title = entry.showing ? `Translated from ${from}. Show original` : `Translate from ${from}`;
+    const title = entry.showing
+      ? `Translated from ${languageName(entry.source!)}. Show original`
+      : 'Translate';
     const chip = entry.button?.shadowRoot?.querySelector('button');
     if (chip) {
       chip.textContent = label;

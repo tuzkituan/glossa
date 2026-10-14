@@ -3,7 +3,7 @@
 Chrome extension that translates chat messages and selected text on the device, using Chrome's built-in Translator and LanguageDetector APIs. No API keys, and no text leaves the browser.
 
 - **Selection**: select text on any page and click the button that appears, or press Alt+T, or right-click → Translate.
-- **Chat messages**: on Google Chat, Messenger/Facebook and LinkedIn, messages in another language get a small Translate button. Clicking it swaps the message for its translation in place; click again for the original. Your own messages and messages already in your language get no button.
+- **Chat messages**: on Google Chat, Messenger/Facebook and LinkedIn, every message gets a Translate button (in the hover toolbar on Google Chat). Clicking it swaps the message for its translation in place, keeping mentions and formatting; click again for the original. A message already in your language is translated into your reply language.
 - **Your reply**: type in your language in any text box and press Alt+Enter. The draft is replaced with the translation (Ctrl+Z restores it). On the chat sites it can reply in the language the other person writes in.
 - **Toolbar popup**: translate typed text and turn the message buttons on or off for the current site.
 

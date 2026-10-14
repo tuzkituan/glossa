@@ -104,6 +104,38 @@ function remember(key: string, value: string) {
   if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
 }
 
+/** Words the model must not re-case: Tour.GuideButton, camelCase, PRD, snake_case, paths, URLs, @mentions. */
+function protectedWords(text: string): string[] {
+  const words = new Set<string>();
+  for (const raw of text.split(/\s+/)) {
+    const word = raw.replace(/^[("'`[{<]+|[)"'`\]}>,;:!?.]+$/g, '');
+    if (word.length < 2 || !/\p{L}/u.test(word)) continue;
+    const codeLike =
+      /\p{Ll}\p{Lu}/u.test(word) || // camelCase / PascalCase inside
+      /\p{Lu}.*\p{Lu}/u.test(word) || // GuideButton, PRD
+      /\w[._/\\:#-]\w/.test(word) || // Tour.Guide, snake_case, a/b, http://
+      /^[@#]/.test(word);
+    if (codeLike) words.add(word);
+  }
+  return [...words];
+}
+
+/** A line written entirely in capitals ("TÔI BẢO LÀ KHÔNG") stays in capitals. */
+function shouting(text: string): boolean {
+  const cased = text.match(/[\p{Lu}\p{Ll}]/gu) ?? [];
+  return cased.length >= 2 && cased.every((c) => /\p{Lu}/u.test(c));
+}
+
+/** Put back the original casing of protected words the model kept but lowercased. */
+function restoreCase(source: string, translated: string): string {
+  let out = translated;
+  for (const word of protectedWords(source)) {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, 'giu'), word);
+  }
+  return out;
+}
+
 export async function translate(req: TranslateRequest): Promise<TranslateResponse> {
   const { text, target, auto } = req;
   try {
@@ -132,9 +164,13 @@ export async function translate(req: TranslateRequest): Promise<TranslateRespons
     // Translate line by line so line breaks survive.
     const parts = text.split(/(\n+)/);
     const out = await Promise.all(
-      parts.map((p) => (p.trim() && !/^\n+$/.test(p) ? translator.translate(p) : p)),
+      parts.map(async (p) => {
+        if (!p.trim() || /^\n+$/.test(p)) return p;
+        const t = await translator.translate(p);
+        return shouting(p) ? t.toLocaleUpperCase(target) : t;
+      }),
     );
-    const result = out.join('');
+    const result = restoreCase(text, out.join(''));
     remember(key, result);
     return { ok: true, text: result, source, target };
   } catch (e) {

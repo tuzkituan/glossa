@@ -20,6 +20,12 @@ export interface SiteAdapter {
     /** A button styled like the site's own toolbar buttons. */
     button(): ToolbarButton;
   };
+  /** Message boxes, where a Translate-draft button goes next to the site's own icons. */
+  composer?: {
+    /** Each composer on the page: its text box and the element to insert the button before. */
+    find(): { editor: HTMLElement; slot: Element }[];
+    button(): ToolbarButton;
+  };
 }
 
 export interface ToolbarButton {

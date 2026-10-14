@@ -1,4 +1,5 @@
 import { keyCombo } from '@/lib/keys';
+import { ComposerButtons } from '@/lib/composer';
 import { MessageButtons } from '@/lib/messages';
 import { send, type Failure } from '@/lib/messaging';
 import { focusedEditable, translateDraft } from '@/lib/reply';
@@ -31,6 +32,14 @@ export default defineContentScript({
 
     const buttons = site ? new MessageButtons(site, () => settings, onMessageFailure) : null;
     if (site) buttons!.setEnabled(settings.messageButtons[site.id]);
+    const composers = site
+      ? new ComposerButtons(
+          site,
+          (editor) => translateDraft(editor, settings, site, openSettings),
+          () => settings.replyKey,
+        )
+      : null;
+    if (site) composers!.setEnabled(settings.messageButtons[site.id]);
 
     // Reloading the extension orphans this script: it stops hearing settings changes,
     // so a toggle-off would never reach it. Shut down and remove what it rendered.
@@ -38,6 +47,7 @@ export default defineContentScript({
       if (browser.runtime?.id) return;
       window.clearInterval(watchdog);
       buttons?.setEnabled(false);
+      composers?.setEnabled(false);
       hidePopups();
     }, 2000);
 
@@ -46,6 +56,7 @@ export default defineContentScript({
       settings = next;
       if (!site || !buttons) return;
       buttons.setEnabled(next.messageButtons[site.id]);
+      composers?.setEnabled(next.messageButtons[site.id]);
       if (prev.target !== next.target) buttons.reset();
     });
 
