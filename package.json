@@ -1,13 +1,14 @@
 {
   "name": "glossa",
-  "description": "On-device translation for chats and selected text, using Chrome's built-in Translator API",
+  "description": "Translate chats and selected text, and fix the English in your drafts, with Chrome's built-in AI",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
-    "zip": "wxt zip",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip && wxt zip -b firefox",
     "check": "tsc --noEmit",
     "postinstall": "wxt prepare"
   },
