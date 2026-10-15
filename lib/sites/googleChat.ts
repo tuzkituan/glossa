@@ -13,7 +13,7 @@ const COMPOSER = '[jsname="ZQsur"]';
 const EDITOR = '[role="textbox"][contenteditable="true"]';
 const FORMATTING = 'button[jsname="VrqbYe"]';
 const ICON_ROW = '[jsname="bXurze"] > div';
-const COMPOSER_BUTTON = 'pYTkkf-Bz112c-LgbsSe pYTkkf-Bz112c-LgbsSe-OWXEXe-SfQLQb-suEOdc FmuFtb';
+const COMPOSER_BUTTON = 'pYTkkf-Bz112c-LgbsSe pYTkkf-Bz112c-LgbsSe-OWXEXe-SfQLQb-suEOdc KP38Df wAZd3e FmuFtb';
 
 function iconButton(wrapClass: string, buttonClass: string, size: number, icon: string) {
   const root = document.createElement('div');
@@ -59,6 +59,6 @@ export const googleChat: SiteAdapter = {
       }
       return found;
     },
-    button: (icon) => iconButton('', COMPOSER_BUTTON, 18, icon),
+    button: (icon) => iconButton('', COMPOSER_BUTTON, 24, icon),
   },
 };
