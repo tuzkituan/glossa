@@ -54,7 +54,7 @@ let layer: HTMLDivElement;
 
 function root(): HTMLDivElement {
   if (!host || !host.isConnected) {
-    host = document.createElement('glossa-overlay');
+    host = document.createElement('parley-overlay');
     const shadow = host.attachShadow({ mode: 'closed' });
     shadow.innerHTML = `<style>${CSS}</style><div class="layer"></div>`;
     layer = shadow.querySelector('.layer')!;
@@ -63,7 +63,7 @@ function root(): HTMLDivElement {
   return layer;
 }
 
-/** True when the event happened inside Glossa's own UI. */
+/** True when the event happened inside Parley's own UI. */
 export function isOwnEvent(e: Event): boolean {
   return !!host && e.composedPath().includes(host);
 }
@@ -91,7 +91,7 @@ export function showButton(anchor: DOMRect, onClick: () => void) {
   hidePopups();
   button = document.createElement('button');
   button.className = 'btn';
-  button.title = 'Translate (Glossa)';
+  button.title = 'Translate (Parley)';
   button.innerHTML = ICON;
   button.addEventListener('mousedown', (e) => e.preventDefault()); // keep the selection
   button.addEventListener('click', onClick);
@@ -145,7 +145,7 @@ export function showCard(anchor: DOMRect, target: string, handlers: CardHandlers
         body.classList.add('muted');
         if (res.code === 'needs-download' || res.code === 'no-api') {
           const open = document.createElement('button');
-          open.textContent = 'Open Glossa settings';
+          open.textContent = 'Open Parley settings';
           const pair: [string, string] | undefined =
             res.source && res.target ? [res.source, res.target] : undefined;
           open.addEventListener('click', () => handlers.onOpenSettings(pair));

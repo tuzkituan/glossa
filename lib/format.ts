@@ -45,7 +45,7 @@ export function segments(root: HTMLElement): Segment[] {
     }
     if (!(node instanceof HTMLElement)) return;
     if (node.tagName === 'BR') return flush();
-    if (node.tagName.startsWith('GLOSSA-')) return;
+    if (node.tagName.startsWith('PARLEY-')) return;
     const style = getComputedStyle(node);
     if (hidden(style)) return;
     if (atomic(node, style)) return flush();

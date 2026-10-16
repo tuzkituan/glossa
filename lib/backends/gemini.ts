@@ -63,7 +63,7 @@ async function fixOne(text: string, key: string, model: string): Promise<string>
 
 export function gemini(key: string, model: string) {
   return async (texts: string[]): Promise<string[]> => {
-    if (!key) throw new EngineError('error', 'Add your Gemini API key in Glossa settings.');
+    if (!key) throw new EngineError('error', 'Add your Gemini API key in Parley settings.');
     return Promise.all(texts.map((t) => fixOne(t, key, model)));
   };
 }

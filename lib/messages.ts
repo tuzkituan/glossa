@@ -41,7 +41,7 @@ interface Entry {
   tool?: ToolbarButton;
 }
 
-const COPY = 'data-glossa-copy';
+const COPY = 'data-parley-copy';
 
 /** Generic guess: the last button after the message whose text is just a count ("👍 2"). */
 function guessReactionAnchor(el: HTMLElement, others: HTMLElement[]): HTMLElement | null {
@@ -51,7 +51,7 @@ function guessReactionAnchor(el: HTMLElement, others: HTMLElement[]): HTMLElemen
         !el.contains(c) &&
         el.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING &&
         /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]*\d+\s*$/u.test(c.textContent ?? '') &&
-        !c.closest('glossa-button'),
+        !c.closest('parley-button'),
     );
     if (chips.length) return chips.at(-1)!;
   }
@@ -326,7 +326,7 @@ export class MessageButtons {
       }
       const copy = translatedCopy(el, segs, res.texts);
       copy.setAttribute(COPY, '');
-      copy.title = `Translated from ${languageName(entry.source!)} by Glossa`;
+      copy.title = `Translated from ${languageName(entry.source!)} by Parley`;
       // Recolour the bubble itself rather than the copy, so its shape stays exactly as drawn.
       const bubble = findBubble(el, this.messages());
       if (bubble) {
@@ -401,7 +401,7 @@ export class MessageButtons {
   }
 
   private createChip(el: HTMLElement, entry: Entry): HTMLElement {
-    const host = document.createElement('glossa-button');
+    const host = document.createElement('parley-button');
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `<style>${BUTTON_CSS}</style><button></button>`;
     shadow.querySelector('button')!.addEventListener('click', (e) => {
@@ -415,7 +415,7 @@ export class MessageButtons {
   }
 
   private createToolButton(el: HTMLElement, entry: Entry, made: ToolbarButton): ToolbarButton {
-    made.root.setAttribute('data-glossa', '');
+    made.root.setAttribute('data-parley', '');
     made.button.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();

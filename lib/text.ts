@@ -45,7 +45,7 @@ export function readableText(root: HTMLElement): string {
       out += (node as HTMLImageElement).alt; // emoji
       return;
     }
-    if (node.tagName === 'GLOSSA-LINE') return;
+    if (node.tagName === 'PARLEY-LINE') return;
     const style = getComputedStyle(node);
     if (style.display === 'none' || style.visibility === 'hidden' || screenReaderOnly(style)) return;
     const block = !parentInline && BLOCK.test(style.display);

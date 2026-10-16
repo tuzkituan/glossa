@@ -33,7 +33,7 @@ export default defineContentScript({
       if (reported.has(key) && !clicked) return;
       reported.add(key);
       const pair: [string, string] | undefined = f.source && f.target ? [f.source, f.target] : undefined;
-      toast(`Glossa: ${f.message}`, undefined, { label: 'Set up', run: () => openSettings(pair) }, 8000);
+      toast(`Parley: ${f.message}`, undefined, { label: 'Set up', run: () => openSettings(pair) }, 8000);
     };
 
     const buttons = site ? new MessageButtons(site, () => settings, onMessageFailure) : null;

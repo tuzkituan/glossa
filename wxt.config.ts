@@ -4,7 +4,7 @@ const PROOFREAD_HOSTS = ['https://api.languagetool.org/*', 'https://generativela
 
 export default defineConfig({
   manifest: ({ browser }) => ({
-    name: 'Glossa',
+    name: 'Parley',
     description:
       browser === 'firefox'
         ? 'Translate chats and selected text with Google Translate, and fix your English'
@@ -18,7 +18,7 @@ export default defineConfig({
     ...(browser === 'firefox' && {
       browser_specific_settings: {
         gecko: {
-          id: 'glossa@tuzkituan',
+          id: 'parley@tuzkituan',
           strict_min_version: '115.0',
           // Text you choose to translate goes to Google Translate; text you fix goes to LanguageTool or Gemini.
           data_collection_permissions: { required: ['websiteContent', 'personalCommunications'] },

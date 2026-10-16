@@ -73,7 +73,7 @@ export type DetectResponse =
   | Failure;
 
 /** Messages the background forwards to the offscreen document carry `dest: OFFSCREEN`. */
-export const OFFSCREEN = 'glossa-offscreen';
+export const OFFSCREEN = 'parley-offscreen';
 
 export async function send(req: TranslateRequest): Promise<TranslateResponse>;
 export async function send(req: TranslateManyRequest): Promise<TranslateManyResponse>;
@@ -87,7 +87,7 @@ export async function send(req: Request): Promise<unknown> {
     return {
       ok: false,
       code: 'disconnected',
-      message: 'Glossa was updated. Reload this page to use it here.',
+      message: 'Parley was updated. Reload this page to use it here.',
     } satisfies Failure;
   }
 }

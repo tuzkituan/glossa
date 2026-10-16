@@ -6,7 +6,7 @@ import { OFFSCREEN, type ProofreadRequest, type Request } from '@/lib/messaging'
 import { loadGeminiKey, loadSettings } from '@/lib/settings';
 
 const OFFSCREEN_URL = '/offscreen.html';
-const MENU_ID = 'glossa-translate';
+const MENU_ID = 'parley-translate';
 
 let creating: Promise<void> | null = null;
 

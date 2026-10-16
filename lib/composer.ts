@@ -47,9 +47,9 @@ export class ComposerButtons {
     for (const b of this.buttons) if (!b.isConnected) this.buttons.delete(b);
     for (const { editor, slot } of composer.find()) {
       for (const action of this.actions) {
-        if (slot.parentElement?.querySelector(`:scope > [data-glossa-draft="${action.id}"]`)) continue;
+        if (slot.parentElement?.querySelector(`:scope > [data-parley-draft="${action.id}"]`)) continue;
         const { root, button } = composer.button(action.icon);
-        root.setAttribute('data-glossa-draft', action.id);
+        root.setAttribute('data-parley-draft', action.id);
         const label = action.label();
         button.title = label;
         button.setAttribute('aria-label', label);
